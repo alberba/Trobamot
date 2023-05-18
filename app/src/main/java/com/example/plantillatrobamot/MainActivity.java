@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     // Variables de lògica del joc
     private final int lengthWord = 5;
     private final int maxTry = 6;
+    gjfjgkdjdfhdfd
 
     private String palabraSolucion = "pasta";
     private int numIntentos = 0;
