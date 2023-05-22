@@ -13,9 +13,8 @@ public class UnsortedLinkedListSet<E> {
     }
     private Node first;
 
-    public UnsortedLinkedListSet() {
-        first = null;
-    }
+
+    public UnsortedLinkedListSet(){ first = null; }
 
     public boolean isEmpty() {
         return first == null;

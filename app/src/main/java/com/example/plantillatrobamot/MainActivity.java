@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 
@@ -36,13 +37,15 @@ public class MainActivity extends AppCompatActivity {
     private int numIntentos = 0;
     private int numLetra = 0;
     private int contadorPalabrasDiccionario = 0;
+    // Si el valor es false, se pasará del árbol 0 al 1. Si el valor es true, del 1 al 0.
+    private boolean arbolSwitcher = false;
 
     // mapping con la información de las letras y su posición en la palabra original
     UnsortedArrayMapping<Character, UnsortedLinkedListSet<Integer>> letras;
     // mapping con las palabras sin acento (keys) y con acento (values) del diccionario
     HashMap<String, String> diccionario = new HashMap<>();
     // mapping similar a diccionario pero solo con las palabras que pueden ser solución
-    TreeSet<String> posiblesSoluciones = new TreeSet<>();
+    TreeSet<String> [] posiblesSoluciones = new TreeSet[2];
 
 
 
@@ -127,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
             r.close();
             is.close();
         } catch (IOException e) {
-            // Mostrar pantalla de victoria
+            // Control de Excepción
             Context context = getApplicationContext() ;
             CharSequence text = "Error al crear el fichero";
             int duration = Toast.LENGTH_LONG;
@@ -147,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         TextView [][] textViewGraella = new TextView [maxTry][lengthWord];
-        // Crear un TextView
+        // Crear un TextView per cada posició de la graella
         for(int i = 0; i < maxTry; i++){
             for(int j = 0; j < lengthWord; j++){
                 textViewGraella[i][j] = new TextView(this);
@@ -235,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
             // crear Button
             botonLetra = new Button(this);
             // añadir texto
-            String textoBoton = "" + (char) (((Character) p.getKey()).charValue() + ('A'-'a'));
+            String textoBoton = "" + (char) ((Character) p.getKey() + ('A'-'a'));
             botonLetra.setText(textoBoton);
 
             // personalizar Button
@@ -320,31 +323,52 @@ public class MainActivity extends AppCompatActivity {
     private void initPosiblesSoluciones() {
         Set<Map.Entry<String, String>> setDiccionario = diccionario.entrySet();
         Iterator iterador = setDiccionario.iterator();
-        // se copia el contenido del hash en el árbol RN
+        posiblesSoluciones[0] = new TreeSet<>();
+        posiblesSoluciones[1] = new TreeSet<>();
+        // Se copia el contenido del hash en el árbol RN
         while (iterador.hasNext()) {
             Map.Entry<String, String> entry = (Map.Entry<String, String>) iterador.next();
             String key = entry.getKey();
-            posiblesSoluciones.add(key);
+            posiblesSoluciones[0].add(key);
         }
 
-        Iterator itSeries = posiblesSoluciones.iterator();
+        Iterator itSeries = posiblesSoluciones[0].iterator();
         while (itSeries.hasNext()){
             String key = (String) itSeries.next();
             Log.d("hola", "key: " + key);
 
         }
 
+
     }
 
     private void updatePosiblesSoluciones() {
-        Iterator itSeries = posiblesSoluciones.iterator();
+        Iterator itSeries;
+        TreeSet<String> posiblesSolucionesAux = new TreeSet<>();
+        // Se alternará entre árboles en cada turno
+        if (!arbolSwitcher) {
+            itSeries = posiblesSoluciones[0].iterator();
+        } else {
+            itSeries = posiblesSoluciones[1].iterator();
+        }
+        // Se actualiza un árbol teniendo en cuenta las nuevas restricciones
         while (itSeries.hasNext()) {
-            String key = (String)itSeries.next();
-            for(int i = 0; i < key.length(); i++) {
-                /*if (key.charAt(i) != ) {
-                    itSeries.remove();
-                    break;
-                }*/
+            String key = (String) itSeries.next();
+            for (int i = 0; i < key.length(); i++) {
+                boolean correcta = false;
+                // La letra no existe en la solución
+                if (letras.get(key.charAt(i)).isEmpty()) {
+                    letras.get(key.charAt(i)).add(-1);
+                // la letra esta en la solucion
+                } else {
+                    Iterator it = letras.get(key.charAt(i)).iterator();
+                    while (it.hasNext() && !correcta) {
+                        Integer num = (Integer) it.next();
+                        if (num != i) {
+                            correcta = true;
+                        }
+                    }
+                }
             }
         }
     }
