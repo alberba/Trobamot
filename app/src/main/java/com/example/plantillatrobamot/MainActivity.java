@@ -359,7 +359,7 @@ public class MainActivity extends AppCompatActivity {
                 // La letra no existe en la solución
                 if (letras.get(key.charAt(i)).isEmpty()) {
                     letras.get(key.charAt(i)).add(-1);
-                // la letra esta en la solucion
+                // La letra esta en la solucion
                 } else {
                     Iterator it = letras.get(key.charAt(i)).iterator();
                     while (it.hasNext() && !correcta) {
@@ -367,6 +367,9 @@ public class MainActivity extends AppCompatActivity {
                         if (num != i) {
                             correcta = true;
                         }
+                    }
+                    if (!correcta){
+
                     }
                 }
             }
