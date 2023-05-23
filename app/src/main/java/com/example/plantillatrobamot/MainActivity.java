@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
     // mapping con las palabras sin acento (keys) y con acento (values) del diccionario
     HashMap<String, String> diccionario = new HashMap<>();
     // mapping similar a diccionario pero solo con las palabras que pueden ser solución
-    TreeSet<String> [] posiblesSoluciones = new TreeSet[2];
+    TreeSet<String> posiblesSoluciones = new TreeSet<>();
 
 
 
@@ -323,16 +323,14 @@ public class MainActivity extends AppCompatActivity {
     private void initPosiblesSoluciones() {
         Set<Map.Entry<String, String>> setDiccionario = diccionario.entrySet();
         Iterator iterador = setDiccionario.iterator();
-        posiblesSoluciones[0] = new TreeSet<>();
-        posiblesSoluciones[1] = new TreeSet<>();
         // Se copia el contenido del hash en el árbol RN
         while (iterador.hasNext()) {
             Map.Entry<String, String> entry = (Map.Entry<String, String>) iterador.next();
             String key = entry.getKey();
-            posiblesSoluciones[0].add(key);
+            posiblesSoluciones.add(key);
         }
 
-        Iterator itSeries = posiblesSoluciones[0].iterator();
+        Iterator itSeries = posiblesSoluciones.iterator();
         while (itSeries.hasNext()){
             String key = (String) itSeries.next();
             Log.d("hola", "key: " + key);
@@ -342,20 +340,25 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    // Función para actualizar el árbol de posibles soluciones haciendo uso del
+    // árbol binario de las restricciones
     private void updatePosiblesSoluciones() {
-        Iterator itSeries;
+        // Iterador que recorrerá el árbol con las restricciones del intento anterior
+        Iterator itSeries = posiblesSoluciones.iterator();
+        // Árbol auxiliar para almacenar las posibles soluciones teniendo en cuenta las nuevas
+        // restricciones
         TreeSet<String> posiblesSolucionesAux = new TreeSet<>();
-        // Se alternará entre árboles en cada turno
-        if (!arbolSwitcher) {
-            itSeries = posiblesSoluciones[0].iterator();
-        } else {
-            itSeries = posiblesSoluciones[1].iterator();
-        }
-        // Se actualiza un árbol teniendo en cuenta las nuevas restricciones
+
+        // Se va recorriendo posiblesSoluciones
         while (itSeries.hasNext()) {
             String key = (String) itSeries.next();
             for (int i = 0; i < key.length(); i++) {
                 boolean correcta = false;
+
+                /////////////////////////////////////////////////////////////////////7
+                ////////                    CORREGIR ESTO                       //////
+                /////////////////////////////////////////////////////////////////////7
+
                 // La letra no existe en la solución
                 if (letras.get(key.charAt(i)).isEmpty()) {
                     letras.get(key.charAt(i)).add(-1);
@@ -374,6 +377,9 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+
+        // Se asigna el puntero del árbol auxiliar al árbol de posibles soluciones
+        posiblesSoluciones = posiblesSolucionesAux;
     }
 
     public void onClickTeclado(View v) {
