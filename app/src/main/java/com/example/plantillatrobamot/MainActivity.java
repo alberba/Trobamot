@@ -5,6 +5,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -37,14 +38,17 @@ public class MainActivity extends AppCompatActivity {
     private int numIntentos = 0;
     private int numLetra = 0;
     private int contadorPalabrasDiccionario = 0;
-    // Si el valor es false, se pasará del árbol 0 al 1. Si el valor es true, del 1 al 0.
-    private boolean arbolSwitcher = false;
 
     // mapping con la información de las letras y su posición en la palabra original
+    // implementación de array
     UnsortedArrayMapping<Character, UnsortedLinkedListSet<Integer>> letras;
+    // mapping con las letras que intenta insertar
+    TreeMap <Character, UnsortedLinkedListSet<Integer>> restricciones;
     // mapping con las palabras sin acento (keys) y con acento (values) del diccionario
+    // implementación hash
     HashMap<String, String> diccionario = new HashMap<>();
-    // mapping similar a diccionario pero solo con las palabras que pueden ser solución
+    // Conjunto que contiene las palabras que pueden ser solución (sin acento)
+    // implementación de arbol binario
     TreeSet<String> posiblesSoluciones = new TreeSet<>();
 
 
@@ -321,15 +325,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initPosiblesSoluciones() {
+        // obtenemos un iterador sobre el mapping del diccionario
         Set<Map.Entry<String, String>> setDiccionario = diccionario.entrySet();
         Iterator iterador = setDiccionario.iterator();
-        // Se copia el contenido del hash en el árbol RN
+        // Se copia el contenido del hash (las claves) en el árbol RN posiblesSoluciones
         while (iterador.hasNext()) {
             Map.Entry<String, String> entry = (Map.Entry<String, String>) iterador.next();
+            // obtener clave
             String key = entry.getKey();
             posiblesSoluciones.add(key);
         }
 
+        // esto es para comprobar, habrá que quitarlo después
         Iterator itSeries = posiblesSoluciones.iterator();
         while (itSeries.hasNext()){
             String key = (String) itSeries.next();
@@ -343,38 +350,82 @@ public class MainActivity extends AppCompatActivity {
     // Función para actualizar el árbol de posibles soluciones haciendo uso del
     // árbol binario de las restricciones
     private void updatePosiblesSoluciones() {
-        // Iterador que recorrerá el árbol con las restricciones del intento anterior
+        // Iterador que recorrerá el árbol teniendo en cuenta las restricciones del intento anterior
         Iterator itSeries = posiblesSoluciones.iterator();
         // Árbol auxiliar para almacenar las posibles soluciones teniendo en cuenta las nuevas
         // restricciones
         TreeSet<String> posiblesSolucionesAux = new TreeSet<>();
+        // Boolean que guarda si la palabra es una posible solución o no
+        boolean correcta = true;
 
         // Se va recorriendo posiblesSoluciones
         while (itSeries.hasNext()) {
-            String key = (String) itSeries.next();
+            /*String key = (String) itSeries.next();
+            Set<Map.Entry<Character, UnsortedLinkedListSet<Integer>>> setRestricciones = restricciones.entrySet();
+            Iterator it = setRestricciones.iterator();
             for (int i = 0; i < key.length(); i++) {
-                boolean correcta = false;
-
-                /////////////////////////////////////////////////////////////////////7
-                ////////                    CORREGIR ESTO                       //////
-                /////////////////////////////////////////////////////////////////////7
-
-                // La letra no existe en la solución
-                if (letras.get(key.charAt(i)).isEmpty()) {
-                    letras.get(key.charAt(i)).add(-1);
-                // La letra esta en la solucion
-                } else {
-                    Iterator it = letras.get(key.charAt(i)).iterator();
-                    while (it.hasNext() && !correcta) {
-                        Integer num = (Integer) it.next();
-                        if (num != i) {
-                            correcta = true;
+                // Si la letra no está en restricciones,
+                // no tenemos la suficiente información como para determinar que sea posible o no
+                if (restricciones.containsKey(key.charAt(i))) {
+                    Iterator itRest = restricciones.get(key.charAt(i)).iterator();
+                    while (itRest.hasNext() && correcta) {
+                        int auxPosicionLetra = (int) itRest.next();
+                        if(auxPosicionLetra > 0){
+                            if (aux)
+                        }
+                        if (auxPosicionLetra == -i) {
+                            correcta = false;
                         }
                     }
-                    if (!correcta){
-
-                    }
                 }
+            }*/
+
+            // código de edu
+            String palabra = (String) itSeries.next();
+            Set<Map.Entry<Character, UnsortedLinkedListSet<Integer>>> setRestricciones = restricciones.entrySet();
+            Iterator itRestr = setRestricciones.iterator();
+            boolean cumpleRestricciones = true;
+
+            while (itRestr.hasNext() && cumpleRestricciones) {
+                // obtener pareja del mapping de restricciones
+                Map.Entry <Character, UnsortedLinkedListSet <Integer>> entry = (Map.Entry <Character, UnsortedLinkedListSet <Integer>>) itRestr.next();
+                // obtener valor de la pareja obtenida
+                UnsortedLinkedListSet <Integer> posRest = entry.getValue();
+
+                Iterator posRestIt = posRest.iterator();
+                int posRestI;
+                char c = entry.getKey();
+                String cStr = ""+c;
+
+                while (posRestIt.hasNext()) {
+                    posRestI = (int) posRestIt.next();
+
+                    if (posRestI == 0) {
+                        // la letra no está en la palabra
+                        if (palabra.contains(cStr)) {
+                            cumpleRestricciones = false;
+                        }
+                    } else {
+                        if (posRestI > 0) {
+                            // la letra está en la palabra y en la posición correcta
+                            if (palabra.charAt(posRestI -1) != c) {
+                                // palabra incorrecta
+                                cumpleRestricciones = false;
+                            }
+                        } else {
+                            // la letra está en la palabra, pero no en la posición abs(posUserI)
+                            if ((palabra.charAt(Math.abs(posRestI)-1) == c) && (palabra.contains(cStr))) {
+                                // palabra incorrecta
+                                cumpleRestricciones = false;
+                            }
+                        }
+                    }
+
+                }
+            }
+
+            if (cumpleRestricciones) {
+                posiblesSolucionesAux.add(palabra);
             }
         }
 
@@ -439,7 +490,7 @@ public class MainActivity extends AppCompatActivity {
             Toast toast = Toast.makeText(context, text, duration);
             toast.show();
         } else { // longitud correcta
-            // Recoger la palabra en un string
+            // Recoger la palabra del usuario en un string
             String palabra = "";
             for (int i = 0; i < lengthWord; i++) { // recorrer la palabra
                 TextView textViewSeleccionat = findViewById(numIntentos * lengthWord + i);
@@ -458,19 +509,22 @@ public class MainActivity extends AppCompatActivity {
                 Toast toast = Toast.makeText(context, text, duration);
                 toast.show();
             } else { // La palabra sí existe (a partir de este punto SÍ se envia la palabra)
-                /*boolean acertada = EsCorrecta();
+               boolean acertada = EsCorrecta(palabra);
                 if  (!acertada) { // La palabra no es la correcta
                     if (numIntentos == maxTry) { // Se verifica el número de intentos
                         // Mostrar pantalla game over
                         Context context = getApplicationContext() ;
-                        CharSequence text = "TU PALABRA NO EXISTE";
+                        CharSequence text = "SE ACABARON LOS INTENTOS";
                         int duration = Toast.LENGTH_LONG;
 
                         Toast toast = Toast.makeText(context, text, duration);
                         toast.show();
+                        fin(false);
                     } else { // quedan intentos
                         // siguienteIntento();
                         numIntentos++;
+                        updatePistas(palabra);
+                        updatePosiblesSoluciones();
                         siguienteLinea();
                     }
                 } else {
@@ -481,8 +535,8 @@ public class MainActivity extends AppCompatActivity {
 
                     Toast toast = Toast.makeText(context, text, duration);
                     toast.show();
-                    // fin();
-                }*/
+                    fin(true);
+                }
             }
         }
 
@@ -539,7 +593,7 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    public void getPistas (String word) {
+    public void updatePistas (String word) {
         // hay que mirar, para cada uno de los caracteres de la palabra, si está en la palabra solucion
         char c;
         UnsortedLinkedListSet j;
@@ -552,16 +606,21 @@ public class MainActivity extends AppCompatActivity {
             if (j != null) {
                 // check posiciones unsando index of y substring (quiza necesito String auxiliar);
                 if(j.contains(i+1)){
-                    //poner letra verde
+                    // la letra está en la palabra y en la posición correcta
+                    if(!restricciones.containsKey(c)){
+                        restricciones.put(c, new UnsortedLinkedListSet<>(i+1));
+                    } else {
+                        restricciones.get(c).add(i+1);
+                    }
                 }
-                else{
-                    //poner letra amarillo
+                else {
+                    // la letra está en la palabra pero no esta en la posición correcta
+                    restricciones.put(c, new UnsortedLinkedListSet<>(0);
                 }
 
             } else {
                 // esta letra no se encuentra en la palabra
-                //poner letra roja
-            }
+                restricciones.put(c, new UnsortedLinkedListSet<>(0));
 
         }
     }
@@ -575,5 +634,14 @@ public class MainActivity extends AppCompatActivity {
         TextView textViewSeleccionat = findViewById (numIntentos * lengthWord + numLetra);
         textViewSeleccionat.setBackground(gdOrange);
     }
+    public void fin(boolean w){
+        Intent intent=new Intent(this , MainActivity2 . class);
+        intent.putExtra("PALABRA", palabraSolucion);
+        intent.putExtra("VICTORIA", w);
+        startActivity(intent);
+    }
+
+
+
 
 }

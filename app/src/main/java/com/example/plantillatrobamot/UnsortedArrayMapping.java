@@ -31,7 +31,7 @@ public class UnsortedArrayMapping<K, V> {
             int i = 0;
             boolean found = false;
 
-            for (; (i < n) && !found; i++) {// Si found == true se hará el i++ o no?
+            for (; (i < n) && !found; i++) { // Si found == true se hará el i++ o no?
                 found = claus[i].equals(key);
             }
 
