@@ -7,17 +7,18 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.StyleSpan;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,15 +38,15 @@ public class MainActivity extends AppCompatActivity {
     // Variables de lògica del joc
     private final int lengthWord = 5;
     private final int maxTry = 6;
-    private String palabraSolucion;
     private int numIntentos = 0;
     private int numLetra = 0;
     private int contadorPalabrasDiccionario = 0;
+    private String palabraSolucion;
 
     // mapping con la información de las letras y su posición en la palabra original
     // implementación de array
     UnsortedArrayMapping<Character, UnsortedLinkedListSet<Integer>> letras;
-    // mapping con las letras que intenta insertar
+    // mapping con las pistas generadas a partir de las palabras insertadas por el usuario
     TreeMap <Character, UnsortedLinkedListSet<Integer>> restricciones;
     // mapping con las palabras sin acento (keys) y con acento (values) del diccionario
     // implementación hash
@@ -53,8 +54,6 @@ public class MainActivity extends AppCompatActivity {
     // Conjunto que contiene las palabras que pueden ser solución (sin acento)
     // implementación de arbol binario
     TreeSet<String> posiblesSoluciones = new TreeSet<>();
-
-
 
     // Variables de construcció de la interfície
     public static String grayColor = "#D9E1E8";
@@ -75,13 +74,14 @@ public class MainActivity extends AppCompatActivity {
         widthDisplay = metrics.widthPixels;
         heightDisplay = metrics.heightPixels;
 
-
+        // inicializar estructuras de datos
         crearDiccionario();
         initPosiblesSoluciones();
+        // generar palabra solucion
         generarPalabra();
+        // crear interfaz
         crearInterficie();
     }
-
 
     @Override
     protected void onStart() {
@@ -89,8 +89,11 @@ public class MainActivity extends AppCompatActivity {
         hideSystemUI();
     }
 
+    // método que crea los elementos de la interfaz de forma dinámica
     private void crearInterficie() {
-        crearGraella();
+        // crear casillas
+        crearCasilla();
+        // crear teclado, inicializa el mapping con la información de la palabra solución
         crearTeclat();
 
         // crear TextView de Soluciones
@@ -146,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void crearGraella() {
+    private void crearCasilla() {
         ConstraintLayout constraintLayout = findViewById(R.id.layout);
 
         // Definir les característiques del "pinzell"
@@ -158,8 +161,8 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        TextView [][] textViewGraella = new TextView [maxTry][lengthWord];
-        // Crear un TextView per cada posició de la graella
+        TextView [][] textViewCasilla = new TextView [maxTry][lengthWord];
+        // Crear un TextView per cada posició de la casilla
         for(int i = 0; i < maxTry; i++){
             if (lengthWord == 6){
                 offsetX = 15;
@@ -167,23 +170,21 @@ public class MainActivity extends AppCompatActivity {
                 offsetX = ((lengthWord-1)/2) * (-20);
             }
             for(int j = 0; j < lengthWord; j++){
-                textViewGraella[i][j] = new TextView(this);
-                textViewGraella[i][j].setBackground(gd);
-                textViewGraella[i][j].setId(i*lengthWord+j);
-                textViewGraella[i][j].setWidth(textViewSize);
-                textViewGraella[i][j].setHeight(textViewSize);
-                textViewGraella[i][j].setX((float) widthDisplay/2 - (float)textViewSize/2 - (float)(lengthWord/2 - j)*textViewSize + offsetX);
-                textViewGraella[i][j].setY((float)heightDisplay/3 - textViewSize/2 - (maxTry/2 - i)*textViewSize + offsetY);
-                textViewGraella[i][j].setGravity(Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL);
-                textViewGraella[i][j].setTextColor(Color.GRAY);
-                textViewGraella[i][j].setTextSize(30);
-                textViewGraella[i][j].setText("");
+                textViewCasilla[i][j] = new TextView(this);
+                textViewCasilla[i][j].setBackground(gd);
+                textViewCasilla[i][j].setId(i*lengthWord+j);
+                textViewCasilla[i][j].setWidth(textViewSize);
+                textViewCasilla[i][j].setHeight(textViewSize);
+                textViewCasilla[i][j].setX((float) widthDisplay/2 - (float)textViewSize/2 - (float)(lengthWord/2 - j)*textViewSize + offsetX);
+                textViewCasilla[i][j].setY((float)heightDisplay/3 - textViewSize/2 - (maxTry/2 - i)*textViewSize + offsetY);
+                textViewCasilla[i][j].setGravity(Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL);
+                textViewCasilla[i][j].setTextColor(Color.GRAY);
+                textViewCasilla[i][j].setTextSize(30);
+                textViewCasilla[i][j].setText("");
                 offsetX += 20;
 
-
-
                 // Afegir el TextView al layout
-                constraintLayout.addView(textViewGraella[i][j]);
+                constraintLayout.addView(textViewCasilla[i][j]);
             }
             offsetY += 20;
 
@@ -192,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
         GradientDrawable gdOrange = new GradientDrawable();
         gdOrange.setCornerRadius(5);
         gdOrange.setStroke(3, Color.parseColor("#FF8000"));
-        textViewGraella[0][0].setBackground(gdOrange);
+        textViewCasilla[0][0].setBackground(gdOrange);
 
     }
 
@@ -300,7 +301,7 @@ public class MainActivity extends AppCompatActivity {
         // Añadir la funcionalidad al botón
         buttonEsborrar.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                // verificar si debemos borrar
+                // Verificar si debemos borrar
                 GradientDrawable gd = new GradientDrawable();
                 gd.setCornerRadius(5);
                 gd.setStroke(3, Color.parseColor(grayColor));
@@ -308,7 +309,7 @@ public class MainActivity extends AppCompatActivity {
                 gdOrange.setCornerRadius(5);
                 gdOrange.setStroke(3, Color.parseColor("#FF8000"));
 
-
+                // Si no hay nada que borrar, salir
                 if (numLetra == 0) {
                     return;
                 }
@@ -318,7 +319,7 @@ public class MainActivity extends AppCompatActivity {
                 textViewSiguiente.setBackground(gd);
                 textViewSeleccionat.setBackground(gdOrange);
                 textViewSeleccionat.setText("");
-                // decrementar numLetra
+                // Decrementar numLetra
                 numLetra--;
             }
         });
@@ -340,13 +341,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initPosiblesSoluciones() {
-        // obtenemos un iterador sobre el mapping del diccionario
+        // Se obtiene un iterador sobre el mapping del diccionario
         Set<Map.Entry<String, String>> setDiccionario = diccionario.entrySet();
         Iterator iterador = setDiccionario.iterator();
         // Se copia el contenido del hash (las claves) en el árbol RN posiblesSoluciones
         while (iterador.hasNext()) {
             Map.Entry<String, String> entry = (Map.Entry<String, String>) iterador.next();
-            // obtener clave
+            // Obtener clave
             String key = entry.getKey();
             posiblesSoluciones.add(key);
         }
@@ -419,7 +420,7 @@ public class MainActivity extends AppCompatActivity {
 
                 }
             }
-
+            // Se añade la posible palabra al árbol auxiliar si cumple las restricciones
             if (cumpleRestricciones) {
                 posiblesSolucionesAux.add(palabra);
                 contadorPalabrasDiccionarioAux++;
@@ -435,7 +436,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickTeclado(View v) {
         String text = ((Button) v).getText().toString();
-        // Miramos si se pueden escribir mas palabras
+        // Miramos si se pueden escribir más palabras
         if (numLetra == lengthWord) {
             return;
         }
@@ -446,18 +447,19 @@ public class MainActivity extends AppCompatActivity {
         GradientDrawable gd = new GradientDrawable();
         gd.setCornerRadius(5);
         gd.setStroke(3, Color.parseColor(grayColor));
-        // Buscamos la graella siguiente a rellenar
+        // Buscamos la casilla siguiente a rellenar
         int indiceSeleccionado = numIntentos * lengthWord + numLetra;
 
-        TextView texViewSeleccionat = findViewById (indiceSeleccionado);
-        if (numIntentos * lengthWord < indiceSeleccionado + 1 && (numIntentos+1)*lengthWord > indiceSeleccionado + 1) {
+        TextView textViewSeleccionat = findViewById (indiceSeleccionado);
+
+        if (numIntentos * lengthWord < indiceSeleccionado + 1 && (numIntentos + 1)*lengthWord > indiceSeleccionado + 1) {
             TextView textViewSiguiente = findViewById(numIntentos * lengthWord + numLetra + 1);
             // Escribimos la letra
             textViewSiguiente.setBackground(gdOrange);
         }
-
-        texViewSeleccionat.setBackground(gd);
-        texViewSeleccionat.setText(text);
+        // Escribimos la letra
+        textViewSeleccionat.setBackground(gd);
+        textViewSeleccionat.setText(text);
         numLetra++;
     }
 
@@ -511,8 +513,7 @@ public class MainActivity extends AppCompatActivity {
             } else { // La palabra sí existe (a partir de este punto SÍ se envia la palabra)
                boolean acertada = EsCorrecta(palabra);
                 if  (!acertada) { // La palabra no es la correcta
-
-                    if (numIntentos == maxTry) { // Se verifica el número de intentos
+                    if (numIntentos+1 == maxTry) { // Se verifica el número de intentos
                         // Mostrar pantalla game over
                         Context context = getApplicationContext() ;
                         CharSequence text = "SE ACABARON LOS INTENTOS";
@@ -593,6 +594,10 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    // actualiza las restricciones conocidas en función de la palabra enviada por el usuario
+    // para cada letra, se evalua si está en la posicion correcta, en la palabra pero en otra
+    // posición o directamente no está en la palabra
+    // en función de esto, se actualizan las letras del teclado y las casillas de la graella
     public void updatePistas (String word) {
         // hay que mirar, para cada uno de los caracteres de la palabra, si está en la palabra solucion
         char c;
@@ -604,13 +609,17 @@ public class MainActivity extends AppCompatActivity {
             // obtener conjunto de posiciones
             j = letras.get(c);
 
+            // verificar si la letra está en la palabra (su conjunto de posiciones es no nulo)
             if (j != null) {
-                // check posiciones unsando index of y substring (quiza necesito String auxiliar);
+                // verificar si el conjunto de posiciones contiene el índice de la letra
                 if (j.contains(i + 1)) {
                     // La letra está en la palabra y en la posición correcta (VERDE)
+                    // comprobar si existe o no la restricción de esta letra
                     if (!restricciones.containsKey(c)) {
+                        // crear restricción con la posición i+1
                         restricciones.put(c, new UnsortedLinkedListSet<>(i + 1));
                     } else {
+                        // añadir a la restricción la posición i+1
                         restricciones.get(c).add(i + 1);
                     }
                     pintarCasilla((numIntentos-1)*lengthWord + i, Color.GREEN);
@@ -645,12 +654,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // método que pinta el fondo de un componente de id i del color pasado por parámetro
     private void pintarCasilla(int i, int color) {
         TextView textViewSeleccionat = findViewById(i);
         textViewSeleccionat.setBackgroundColor(color);
         textViewSeleccionat.setTextColor(Color.BLACK);
     }
 
+    // método que salta a la siguiente letra de la graella de casillas,
+    // modificando las variables necesarias
     public void siguienteLinea() {
         numLetra = 0 ;
         GradientDrawable gdOrange = new GradientDrawable();
@@ -661,25 +673,88 @@ public class MainActivity extends AppCompatActivity {
         textViewSeleccionat.setBackground(gdOrange);
     }
 
+    // método que llama a la actividad relacionada con la pantalla de fin de juego
     public void fin(boolean w) {
-        Intent intent=new Intent(this, MainActivity2 . class);
-        intent.putExtra("PALABRA", palabraSolucion);
+        Intent intent=new Intent(this, MainActivity2.class);
+        // paso de parámetros a la nueva actividad
+        intent.putExtra("PALABRA", diccionario.get(palabraSolucion));
         intent.putExtra("VICTORIA", w);
+        intent.putExtra("RESTRICCIONES", setTextRest());
+        intent.putExtra("POSIBLES_SOLUCIONES", palabrasPosiblesToString());
+        // iniciar actividad de pantalla final
         startActivity(intent);
     }
 
+    // método que obtiene una palabra aleatoria de todas aquellas que tengan longitud lenghtWord
     private void generarPalabra(){
+        // generar índice aleatorio de la palabra solución
         int n =  new Random().nextInt(contadorPalabrasDiccionario);
+        // iterador sobre todas las palabras de la longitud requerida
         Iterator it = posiblesSoluciones.iterator();
         String s = "";
+        // recorrido
         for(int i = 0; i < n && it.hasNext(); i++){
             s = (String)it.next();
         }
         palabraSolucion = s;
-        System.out.println(s);
     }
 
 
+    private String setTextRest() {
+        TextView textoRest = findViewById(R.id.textoRestricciones);
+        StringBuilder texto = new StringBuilder("Restriccions: ");
+        // Iterador de las restricciones
+        Set<Map.Entry<Character, UnsortedLinkedListSet<Integer>>> setRestricciones = restricciones.entrySet();
+        Iterator itRestricciones = setRestricciones.iterator();
+        while (itRestricciones.hasNext()) {
+            Map.Entry<Character, UnsortedLinkedListSet<Integer>> restriccion = (Map.Entry<Character, UnsortedLinkedListSet<Integer>>) itRestricciones.next();
+            UnsortedLinkedListSet<Integer> posiciones = restriccion.getValue();
+            Iterator itPosiciones = posiciones.iterator();
+            String aux = ""+restriccion.getKey();
+            while (itPosiciones.hasNext()) {
+                // Obtener posición de la restricción
+                int posRestriccion = (int) itPosiciones.next();
+
+                // Comprobar si la letra de la restricción esta en la solución
+                if (posRestriccion == 0) {
+                    texto.append("no ha de contenir la ").append(aux.toUpperCase()).append(", ");
+                } else {
+                    // La letra está en la palabra solución
+                    if (posRestriccion > 0) {
+                        texto.append("ha de contenir la ").append(aux.toUpperCase()).append(" a la posició ").append(posRestriccion).append(", ");
+                    } else {
+                        // La letra está en la palabra, pero no en la posición
+                        texto.append("no ha de contenir la ").append(aux.toUpperCase()).append(" a la posició ").append(-posRestriccion).append(", ");
+                    }
+                }
+            }
+        }
+        // Eliminamos la última coma y ponemos un punto
+        texto.setCharAt(texto.length()-2, '.');
+
+        return texto.toString();
 
 
+    }
+
+        // método que devuelve un String con las 5 primeras posibles
+    // palabras solución (por orden alfabético)
+    private String palabrasPosiblesToString() {
+        final int MAX_SHOWN_WORDS = 5;
+        Iterator it = posiblesSoluciones.iterator();
+        StringBuilder st = new StringBuilder("Paraules possibles: " + it.next());
+
+        // Concatenación de posibles palabras solución (por orden alfabético)
+        for (int contador = 1; it.hasNext() && contador < MAX_SHOWN_WORDS; contador++) {
+             st.append(", " + it.next());
+        }
+
+        // Comprobamos si hhay más soluciones posibles
+        if(it.hasNext())
+            st.append("...");   // Si hay más palabras, ponemos puntos suspensivos
+        else
+            st.append(".");     // Si no hay más palabras, ponemos un punto
+
+        return st.toString();
+    }
 }
