@@ -315,8 +315,10 @@ public class MainActivity extends AppCompatActivity {
                 }
                 // Buscamos la casilla siguiente a rellenar
                 TextView textViewSeleccionat = findViewById(numIntentos * lengthWord + numLetra - 1);
-                TextView textViewSiguiente = findViewById(numIntentos * lengthWord + numLetra);
-                textViewSiguiente.setBackground(gd);
+                if (numIntentos * lengthWord + numLetra - 1 == lengthWord * maxTry) {
+                    TextView textViewSiguiente = findViewById(numIntentos * lengthWord + numLetra);
+                    textViewSiguiente.setBackground(gd);
+                }
                 textViewSeleccionat.setBackground(gdOrange);
                 textViewSeleccionat.setText("");
                 // Decrementar numLetra
@@ -740,20 +742,15 @@ public class MainActivity extends AppCompatActivity {
         // método que devuelve un String con las 5 primeras posibles
     // palabras solución (por orden alfabético)
     private String palabrasPosiblesToString() {
-        final int MAX_SHOWN_WORDS = 5;
         Iterator it = posiblesSoluciones.iterator();
         StringBuilder st = new StringBuilder("Paraules possibles: " + it.next());
 
         // Concatenación de posibles palabras solución (por orden alfabético)
-        for (int contador = 1; it.hasNext() && contador < MAX_SHOWN_WORDS; contador++) {
-             st.append(", " + it.next());
+        while (it.hasNext()) {
+             st.append(", " + diccionario.get((String) it.next()));
         }
 
-        // Comprobamos si hhay más soluciones posibles
-        if(it.hasNext())
-            st.append("...");   // Si hay más palabras, ponemos puntos suspensivos
-        else
-            st.append(".");     // Si no hay más palabras, ponemos un punto
+        st.append(".");     // Si no hay más palabras, ponemos un punto
 
         return st.toString();
     }

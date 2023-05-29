@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/fondo"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity2">
@@ -32,10 +33,10 @@
 
     <TextView
         android:id="@+id/textoDefPalabra"
-        android:layout_width="363dp"
-        android:layout_height="226dp"
+        android:layout_width="360dp"
+        android:layout_height="198dp"
         android:layout_marginTop="20dp"
-        android:text="TextView"
+        android:scrollbars="horizontal"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -43,10 +44,10 @@
 
     <TextView
         android:id="@+id/textoRestricciones"
-        android:layout_width="365dp"
-        android:layout_height="237dp"
+        android:layout_width="361dp"
+        android:layout_height="152dp"
         android:layout_marginTop="30dp"
-        android:text="TextView"
+        android:scrollbars="horizontal"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -54,10 +55,10 @@
 
     <TextView
         android:id="@+id/textoPalPos"
-        android:layout_width="356dp"
-        android:layout_height="46dp"
+        android:layout_width="360dp"
+        android:layout_height="139dp"
         android:layout_marginTop="20dp"
-        android:text="TextView"
+        android:scrollbars="horizontal"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
